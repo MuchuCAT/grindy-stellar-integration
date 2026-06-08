@@ -6,7 +6,7 @@ This module never asks for a seed phrase and never takes custody of funds. It on
 
 ## Duplicate wallet prevention
 
-The private Grindy backend must enforce that a Stellar public key can only be linked to one Grindy user profile at a time.
+The production Grindy backend must enforce that a Stellar public key can only be linked to one Grindy user profile at a time.
 
 Recommended backend checks:
 
@@ -39,4 +39,3 @@ Do not log:
 - auth session tokens
 - private keys or seed phrases
 - API keys
-

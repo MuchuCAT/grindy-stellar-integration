@@ -151,7 +151,7 @@ function App() {
 					<div>
 						<h2>Verify and link profile</h2>
 						<p>
-							In production, the private Grindy backend stores this wallet link
+							In production, the Grindy backend stores this wallet link
 							after duplicate checks.
 						</p>
 					</div>

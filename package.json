@@ -6,12 +6,15 @@
   "license": "MIT",
   "type": "module",
   "packageManager": "pnpm@10.8.1",
-	"scripts": {
-		"build": "pnpm -r build",
-		"check-types": "pnpm --filter '@grindy/*' build && pnpm -r check-types",
-		"test": "pnpm -r test",
-		"demo": "pnpm --filter grindy-stellar-wallet-demo dev"
-	},
+  "scripts": {
+    "build": "pnpm -r build",
+    "check-types": "pnpm --filter '@grindy/*' build && pnpm -r check-types",
+    "test": "pnpm -r test",
+    "demo": "pnpm --filter grindy-stellar-wallet-demo dev",
+    "vault:ui": "pnpm --filter grindy-reward-vault-next dev",
+    "contract:build": "stellar contract build --manifest-path contracts/campaign-reward-vault/Cargo.toml",
+    "contract:test": "cargo test --manifest-path contracts/campaign-reward-vault/Cargo.toml"
+  },
   "workspaces": [
     "packages/*",
     "examples/*"

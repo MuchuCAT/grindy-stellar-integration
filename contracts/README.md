@@ -1,8 +1,25 @@
 # Contracts
 
-Deliverable 1 does not require Soroban smart contracts.
+This folder contains open-source Soroban contract work for Grindy's Stellar integration.
 
-Future deliverables may add Soroban contracts for advanced campaign escrow and reward distribution. Those contracts should live here when implemented and should be open-sourced separately from the proprietary Grindy application.
+## Current Contract
 
-Initial settlement can use Stellar Claimable Balances before introducing custom contracts.
+- `campaign-reward-vault`: a testnet-ready vault demonstrating wallet-authenticated `deposit` and `withdraw` flows for a protocol-funded campaign reward pool.
 
+## Build
+
+```bash
+pnpm contract:build
+```
+
+## Test
+
+```bash
+pnpm contract:test
+```
+
+## Product Boundary
+
+The vault is a focused public proof for SCF reviewers. The live Grindy campaign engine remains separate and already handles campaign setup, scoring, leaderboards, CEX tracking, analytics, and reward operations.
+
+The future production Stellar settlement layer will extend this proof with campaign-specific escrow rules, finalization, reward allocations, pausing, refunds, and audited distribution logic.
