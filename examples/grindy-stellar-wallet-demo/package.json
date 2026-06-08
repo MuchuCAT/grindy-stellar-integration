@@ -1,0 +1,24 @@
+{
+  "name": "grindy-stellar-wallet-demo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 3030",
+    "build": "vite build",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@grindy/stellar-wallet-link": "workspace:*",
+    "@grindy/stellar-signature-verifier": "workspace:*",
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^6.2.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.8.3"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.12",
+    "@types/react-dom": "^19.0.4"
+  }
+}

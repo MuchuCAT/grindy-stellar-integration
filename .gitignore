@@ -1,0 +1,13 @@
+node_modules
+dist
+.DS_Store
+.env
+.env.local
+.env.*.local
+coverage
+*.log
+*.tsbuildinfo
+packages/*/test/*.js
+packages/*/test/*.js.map
+packages/*/test/*.d.ts
+packages/*/test/*.d.ts.map
