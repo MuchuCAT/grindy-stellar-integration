@@ -1,8 +1,6 @@
 # Grindy Stellar Integration
 
-Open-source Stellar wallet connection and wallet-to-profile linking modules for Grindy's Stellar Community Fund Integration Track work.
-
-This repository is intentionally small and reusable. It does **not** contain the private Grindy campaign engine, CEX integrations, Convex schema, admin tooling, user data, API keys, or proprietary scoring/business logic.
+Open-source Stellar wallet connection and wallet-to-profile linking modules for Grindy's Stellar Community Integration Track work.
 
 ## Scope
 
@@ -34,7 +32,7 @@ The production Grindy repository remains proprietary. It contains:
 - CEX read-only API tracking
 - DEX beta campaign logic
 - scoring and reward engine internals
-- Convex production schema/functions
+- database production schema/functions
 - admin tooling
 - API keys and deployment configuration
 
@@ -46,8 +44,6 @@ pnpm check-types
 pnpm test
 pnpm demo
 ```
-
-The demo intentionally shows only a Stellar wallet flow. It does not expose MetaMask, Phantom, Solflare, or private Grindy campaign functionality.
 
 ## Integration model
 
