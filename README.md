@@ -1,6 +1,6 @@
 # Grindy Stellar Integration
 
-Open-source Stellar wallet, Soroban, and testnet demo modules for Grindy's Stellar Community Fund Integration Track work.
+Open-source Stellar wallet, Soroban, and testnet demo modules for Grindy's Stellar Community Integration Track work.
 
 Grindy is already live as a B2B campaign infrastructure for crypto and DeFi protocols. The production app handles campaigns, profiles, leaderboards, scoring, analytics, CEX read-only tracking, and reward operations. This public repository contains the reusable Stellar integration layer being prepared for the SCF submission.
 
