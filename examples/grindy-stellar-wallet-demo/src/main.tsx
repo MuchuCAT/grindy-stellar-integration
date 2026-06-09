@@ -91,7 +91,7 @@ function App() {
 	return (
 		<main className="shell">
 			<section className="hero">
-				<p className="eyebrow">SCF Deliverable 1 Demo</p>
+				<p className="eyebrow">Stellar Wallet Demo</p>
 				<h1>Grindy Stellar Wallet Linking</h1>
 				<p>
 					Connect a Stellar wallet, sign an ownership message, and verify that

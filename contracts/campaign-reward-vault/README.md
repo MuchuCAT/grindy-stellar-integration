@@ -2,7 +2,7 @@
 
 `CampaignRewardVault` is a small Soroban testnet contract that demonstrates the first on-chain settlement primitive for Grindy's Stellar integration.
 
-The production Grindy engine already handles campaigns, scoring, leaderboards, and reward flows. This contract is not the full production escrow. It is a focused SCF proof that a protocol-funded reward pool can be represented on Stellar with authenticated wallet actions and auditable contract events.
+The production Grindy engine already handles campaigns, scoring, leaderboards, and reward flows. This contract is not the full production escrow. It is a focused testnet proof that a protocol-funded reward pool can be represented on Stellar with authenticated wallet actions and auditable contract events.
 
 ## Contract Functions
 
@@ -23,7 +23,7 @@ Grindy's Stellar roadmap includes protocol-funded campaign reward pools, winner 
 - token transfer into a Soroban contract
 - token withdrawal from a Soroban contract
 - persistent campaign-style accounting
-- contract events for indexing and reviewer verification
+- contract events for indexing and public verification
 
 ## Local Test
 
@@ -58,18 +58,18 @@ Evidence:
 ## Testnet Deployment Checklist
 
 ```bash
-stellar keys generate grindy-scf-demo --network testnet --fund
+stellar keys generate grindy-stellar-demo --network testnet --fund
 
 stellar contract build --manifest-path contracts/campaign-reward-vault/Cargo.toml
 
 stellar contract deploy \
   --wasm contracts/campaign-reward-vault/target/wasm32v1-none/release/campaign_reward_vault.wasm \
-  --source-account grindy-scf-demo \
+  --source-account grindy-stellar-demo \
   --network testnet
 
 stellar contract invoke \
   --id <DEPLOYED_CONTRACT_ID> \
-  --source-account grindy-scf-demo \
+  --source-account grindy-stellar-demo \
   --network testnet \
   -- init \
   --admin <GRINDY_TESTNET_PUBLIC_KEY>

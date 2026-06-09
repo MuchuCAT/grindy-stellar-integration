@@ -2,7 +2,7 @@
   "name": "grindy-stellar-integration",
   "version": "0.1.0",
   "private": true,
-  "description": "Open-source Stellar wallet connection and wallet-to-profile linking modules for Grindy's SCF Integration Track work.",
+  "description": "Open-source Stellar wallet, Soroban, and testnet integration modules for Grindy.",
   "license": "MIT",
   "type": "module",
   "packageManager": "pnpm@10.8.1",

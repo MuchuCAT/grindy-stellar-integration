@@ -1,8 +1,8 @@
 # Grindy Stellar Integration
 
-Open-source Stellar wallet, Soroban, and testnet demo modules for Grindy's Stellar Community Integration Track work.
+Open-source Stellar wallet, Soroban, and testnet integration modules for Grindy.
 
-Grindy is already live as a B2B campaign infrastructure for crypto and DeFi protocols. The production app handles campaigns, profiles, leaderboards, scoring, analytics, CEX read-only tracking, and reward operations. This public repository contains the reusable Stellar integration layer being prepared for the SCF submission.
+Grindy is already live as a B2B campaign infrastructure for crypto and DeFi protocols. The production app handles campaigns, profiles, leaderboards, scoring, analytics, CEX read-only tracking, and reward operations. This public repository contains reusable Stellar integration modules that can be reviewed, tested, and extended independently from the production application.
 
 ## Scope
 
@@ -15,11 +15,11 @@ Deliverable 1: Stellar Wallet Connection & Wallet-to-Profile Linking
 - Link the Stellar public key to an existing Grindy profile in the production Grindy app.
 - Prevent duplicate wallet linking in the production persistence layer.
 
-Additional SCF reviewer proof:
+Additional testnet proof:
 
 - Soroban `CampaignRewardVault` contract with `deposit` and `withdraw`.
 - Next.js testnet UI that connects Freighter and submits a vault transaction.
-- Deployment checklist for testnet contract evidence and demo video recording.
+- Deployment checklist for testnet contract verification.
 
 ## Packages
 
@@ -88,7 +88,7 @@ pnpm contract:test
 
 The deployment checklist lives in [`contracts/campaign-reward-vault/README.md`](contracts/campaign-reward-vault/README.md).
 
-The submission demo roadmap and short video plan live in [`docs/scf-demo-roadmap.md`](docs/scf-demo-roadmap.md).
+The technical architecture lives in [`docs/technical-architecture.md`](docs/technical-architecture.md).
 
 ## Integration model
 

@@ -89,7 +89,7 @@ export default function RewardVaultDemo() {
 		<main className="stage">
 			<section className="hero">
 				<div className="hero-copy">
-					<p className="eyebrow">SCF Testnet Proof</p>
+					<p className="eyebrow">Stellar Testnet Proof</p>
 					<h1>Grindy Reward Vault</h1>
 					<p>
 						A Soroban demo for protocol-funded campaign rewards: connect a
@@ -178,10 +178,10 @@ export default function RewardVaultDemo() {
 
 				<div className="panel proof-panel">
 					<span className="panel-kicker">4 / Evidence</span>
-					<h2>Reviewer proof</h2>
+					<h2>Public proof</h2>
 					<p>
-						The demo produces a public testnet transaction hash that can be shown
-						in the SCF video and checked by reviewers.
+						The demo produces a public testnet transaction hash with contract
+						events that can be verified on Stellar Expert.
 					</p>
 					{status ? <div className="status">{status}</div> : null}
 					{txHash ? (
