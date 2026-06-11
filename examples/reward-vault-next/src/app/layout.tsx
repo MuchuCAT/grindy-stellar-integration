@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-	title: "Grindy Stellar Reward Vault",
-	description: "Open-source Soroban reward vault demo for Grindy's Stellar integration.",
+	title: "Grindy x Stellar | Campaign Infrastructure Demo",
+	description:
+		"Explore Grindy's open-source Stellar wallet identity and Soroban reward settlement integration on testnet.",
 };
 
 export default function RootLayout({
@@ -12,7 +13,7 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en">
+		<html lang="en" suppressHydrationWarning>
 			<body>{children}</body>
 		</html>
 	);

@@ -16,3 +16,5 @@ packages/*/test/*.js
 packages/*/test/*.js.map
 packages/*/test/*.d.ts
 packages/*/test/*.d.ts.map
+.vercel
+.env*.local

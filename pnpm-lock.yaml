@@ -51,6 +51,9 @@ importers:
 
   examples/reward-vault-next:
     dependencies:
+      '@grindy/stellar-signature-verifier':
+        specifier: workspace:*
+        version: link:../../packages/stellar-signature-verifier
       '@grindy/stellar-wallet-link':
         specifier: workspace:*
         version: link:../../packages/stellar-wallet-link

@@ -1,378 +1,316 @@
-# Grindy x Stellar Technical Architecture
+# Grindy Stellar Technical Architecture
 
-This document describes the public Stellar integration architecture for Grindy. It is written as an engineering source-of-truth for wallet identity, Soroban reward settlement, testnet verification, and the next Stellar DeFi adapter layer.
+## 0. Executive Summary
 
-The production Grindy application already handles campaign setup, user profiles, campaign enrollment, scoring, leaderboards, analytics, and reward operations. This repository exposes only the reusable Stellar modules and testnet proof components that can be reviewed independently.
+Grindy is a live B2B campaign infrastructure product for crypto and DeFi protocols. Its current production engine supports campaign creation, participant enrollment, scoring, leaderboards, analytics, and reward operations. The existing MVP validates this model through read-only CEX integrations and completed campaign seasons.
 
-## 1. Current Public Repository Scope
+The SCF Build extends that proven campaign engine into a Stellar-native product. Stellar becomes the identity, activity-data, scoring, and reward-settlement layer for campaigns based on swaps, liquidity provision, lending supply, and yield allocation. The extension adds verified Stellar wallet linking, on-chain event indexing, protocol adapters, Stellar campaign rules, and native reward settlement.
 
-| Area | Status | Public path |
-| --- | --- | --- |
-| Stellar wallet connection | Implemented | `packages/stellar-wallet-link` |
-| Wallet ownership message | Implemented | `packages/stellar-wallet-link/src/index.ts` |
-| Backend-safe signature verifier | Implemented | `packages/stellar-signature-verifier` |
-| Wallet ownership browser demo | Implemented | `examples/grindy-stellar-wallet-demo` |
-| Soroban reward vault | Implemented | `contracts/campaign-reward-vault` |
-| Vault unit test | Implemented | `contracts/campaign-reward-vault/src/lib.rs` |
-| Freighter + contract transaction UI | Implemented | `examples/reward-vault-next` |
-| Stellar protocol activity adapters | Planned extension | Not implemented in this repository yet |
-| Production campaign scoring integration | Production integration point | Not implemented in this repository |
+Grindy never takes custody of participant trading funds. Users interact directly with Stellar wallets and DeFi protocols. Protocol partners define campaigns and fund their reward pools.
 
-## 2. C4 Context Diagram
+## 1. Product Today
+
+Grindy already operates the reusable product core required for protocol-funded campaigns:
+
+- campaign dashboard and campaign management;
+- user profiles and campaign enrollment;
+- configurable campaign rules and eligibility periods;
+- scoring and leaderboard calculation;
+- reward records and settlement operations;
+- participant and campaign analytics;
+- read-only CEX API tracking;
+- administration and campaign monitoring.
+
+The current campaign model has been validated with real usage:
+
+| Metric | Current traction |
+| --- | ---: |
+| Tracked trading volume | USD 310,000+ |
+| Tracked trades | 5,300+ |
+| Rewards distributed | USD 1,300+ |
+| Registered users | 80+ |
+| Active users | 30+ |
+| Campaign seasons launched and settled | 3 |
+
+The Stellar-native architecture preserves this campaign engine. It changes how participant identity is verified, how eligible activity is collected, and how rewards are settled.
+
+## 2. Current vs Stellar-Native Architecture
+
+| Product capability | Current Grindy | Stellar-native Grindy | Scope |
+| --- | --- | --- | --- |
+| Participant identity | Grindy user profile | Grindy profile linked to a verified Stellar public key | Existing core with Stellar connection |
+| Campaign enrollment | Profile-based campaign join | Wallet-qualified enrollment against Stellar campaign rules | Existing core with Stellar connection |
+| Activity tracking | Read-only CEX APIs and DEX beta data | Horizon, Stellar RPC, Soroban events, and protocol adapters | New Stellar-native data layer |
+| Campaign rules | Exchange, pair, period, and volume rules | Protocol, pool, asset, action, duration, and ledger-time rules | Existing rule engine extended for Stellar |
+| Scoring | Normalized trade events scored by campaign rules | Normalized on-chain actions scored by the same campaign engine | Existing core with Stellar event inputs |
+| Leaderboards | Campaign participant rankings | Stellar wallet-linked rankings with on-chain provenance | Existing and reusable |
+| Reward preparation | Reward records and administrative settlement | Final allocations linked to Stellar accounts and a settlement manifest | Existing core with Stellar connection |
+| Simple reward settlement | Administrative payout flow | Claimable Balances | New Stellar-native settlement lane |
+| Advanced reward settlement | Not available on-chain | Soroban campaign escrow and reward distribution | New Stellar-native settlement lane |
+| Protocol coverage | Centralized exchange integrations | Soroswap, Aquarius, Blend v2, and DeFindex adapters | New Stellar-native integrations |
+
+The existing campaign, scoring, leaderboard, analytics, and administration layers remain the product core. The SCF Build connects those capabilities to Stellar identity and on-chain data, then adds Stellar-native settlement.
+
+## 3. Architecture at a Glance
+
+### C4 System Context
 
 ```mermaid
 flowchart LR
-    participant["Person: Campaign Participant<br/>Connects a Stellar wallet and performs eligible Stellar DeFi actions"]
-    protocol["Person: Protocol Partner<br/>Launches campaigns and funds reward pools"]
+    participant["Campaign Participant"]
+    partner["Protocol Partner"]
 
-    grindy["System: Grindy Production App<br/>Campaign engine, profiles, scoring, leaderboards, analytics, reward operations"]
-    wallet["External System: Stellar Wallet<br/>Freighter and Stellar Wallets Kit compatible wallets"]
-    stellar["External System: Stellar Network<br/>Accounts, Stellar Asset Contracts, Soroban contracts, events, RPC, Horizon"]
-    defi["External System: Stellar DeFi Protocols<br/>Soroswap, Aquarius, Blend, DeFindex"]
-
-    participant -->|"connects and signs ownership / transactions"| wallet
-    participant -->|"joins campaigns and views profile / leaderboard"| grindy
-    protocol -->|"configures campaign rules and reward pool"| grindy
-    grindy -->|"requests ownership proof and transaction signatures"| wallet
-    grindy -->|"reads wallet state, transactions, and Soroban events"| stellar
-    grindy -->|"indexes protocol-specific actions through adapters"| defi
-    stellar -->|"provides on-chain activity and settlement proofs"| grindy
-```
-
-## 3. C4 Container Diagram
-
-```mermaid
-flowchart TB
-    participant["Person: Campaign Participant"]
-    grindy["External System: Grindy Production App<br/>Consumes the packages and contract patterns"]
-    stellarRpc["External System: Stellar RPC<br/>Prepares and submits Soroban transactions"]
-    stellarNetwork["External System: Stellar Testnet<br/>Hosts Stellar Asset Contract and CampaignRewardVault"]
-
-    subgraph repo["Container Boundary: grindy-stellar-integration"]
-        walletPkg["Container: stellar-wallet-link<br/>TypeScript package<br/>Wallet connection, nonce generation, ownership message construction, Freighter / Wallets Kit signatures"]
-        verifierPkg["Container: stellar-signature-verifier<br/>TypeScript package<br/>Ed25519 signature validation for wallet ownership proofs"]
-        walletDemo["Container: wallet demo<br/>Vite React app<br/>Browser demo for connect + sign + verify"]
-        vaultUi["Container: reward-vault-next<br/>Next.js app<br/>Freighter connection and Soroban vault transaction flow"]
-        vaultContract["Container: CampaignRewardVault<br/>Soroban Rust contract<br/>Testnet reward vault with init, deposit, withdraw, balance, and total accounting"]
+    subgraph core["Existing Grindy Core"]
+        app["Web Application"]
+        profiles["Profiles and Enrollment"]
+        campaigns["Campaign Rules"]
+        scoring["Scoring Engine"]
+        leaderboard["Leaderboards and Analytics"]
+        admin["Campaign Administration"]
+        data[("Campaign Data Store")]
     end
 
-    participant -->|"connects wallet and signs ownership proof"| walletDemo
-    participant -->|"connects Freighter and submits vault action"| vaultUi
-    walletDemo -->|"uses"| walletPkg
-    walletDemo -->|"uses"| verifierPkg
-    vaultUi -->|"uses"| walletPkg
-    vaultUi -->|"prepareTransaction / sendTransaction"| stellarRpc
-    stellarRpc -->|"submits Soroban invocation"| stellarNetwork
-    stellarNetwork -->|"executes contract"| vaultContract
-    grindy -->|"frontend integration point"| walletPkg
-    grindy -->|"backend integration point"| verifierPkg
-    grindy -->|"reward-settlement integration point"| vaultContract
+    subgraph stellar["Stellar-Native Campaign Layer"]
+        wallet["Stellar Wallets Kit / Freighter"]
+        indexer["Stellar Event Indexer"]
+        adapters["Protocol Adapters"]
+        horizon["Horizon"]
+        rpc["Stellar RPC and Soroban Events"]
+        protocols["Soroswap / Aquarius / Blend / DeFindex"]
+        simple["Claimable Balances"]
+        advanced["CampaignEscrow / RewardDistributor"]
+    end
+
+    participant --> app
+    participant --> wallet
+    partner --> admin
+    app --> profiles
+    admin --> campaigns
+    wallet --> profiles
+    protocols --> horizon
+    protocols --> rpc
+    horizon --> indexer
+    rpc --> indexer
+    indexer --> adapters
+    adapters --> scoring
+    campaigns --> scoring
+    scoring --> leaderboard
+    profiles --> data
+    campaigns --> data
+    scoring --> data
+    leaderboard --> data
+    leaderboard --> simple
+    leaderboard --> advanced
+    simple --> participant
+    advanced --> participant
 ```
 
-## 4. End-to-End Data Flow
-
-### 4.1 Wallet Ownership Flow
+### Campaign Data Flow
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor User
-    participant UI as Grindy / Wallet UI
-    participant Wallet as Freighter or Stellar Wallets Kit
-    participant Verifier as Signature Verifier
-    participant Profile as Grindy Profile Store
+    actor User as Participant
+    participant Wallet as Stellar Wallet
+    participant Protocol as Stellar DeFi Protocol
+    participant Network as Horizon / Stellar RPC
+    participant Indexer as Grindy Indexer
+    participant Engine as Campaign and Scoring Engine
+    participant Board as Leaderboard
+    participant Settlement as Stellar Settlement
 
-    User->>UI: Click connect Stellar wallet
-    UI->>Wallet: Request public key
-    Wallet-->>UI: Return Stellar public key
-    UI->>UI: Generate nonce and ownership message
-    UI->>Wallet: Request message signature
-    Wallet-->>UI: Return signature
-    UI->>Verifier: Verify public key + message + signature
-    Verifier-->>UI: Valid / invalid
-    UI->>Profile: Store verified wallet link after duplicate check
-    Profile-->>UI: Linked Stellar address
+    User->>Wallet: Connect and prove wallet ownership
+    Wallet-->>Engine: Verified Stellar public key
+    User->>Engine: Join eligible campaign
+    User->>Protocol: Perform eligible on-chain action
+    Protocol-->>Network: Record operation or contract event
+    Network-->>Indexer: Stream or return ledger activity
+    Indexer->>Indexer: Normalize, deduplicate, and validate
+    Indexer->>Engine: Submit eligible campaign event
+    Engine->>Board: Update score and ranking
+    Board->>Settlement: Finalize reward allocations
+    Settlement-->>User: Claimable Balance or Soroban payout
 ```
 
-Public implementation:
+## 4. Stellar Integration Components
 
-- `connectWithStellarWalletsKit`
-- `connectWithFreighter`
-- `buildOwnershipMessage`
-- `signOwnershipMessageWithKit`
-- `signOwnershipMessageWithFreighter`
-- `verifyStellarOwnershipSignature`
+### Stellar Wallets Kit and Freighter
 
-### 4.2 Reward Vault Transaction Flow
+Stellar Wallets Kit provides the wallet connection layer, with Freighter as the primary browser-wallet experience. A participant connects a wallet, signs a human-readable ownership message, and links the verified public key to an existing Grindy profile. Authentication remains separate from wallet ownership: the Stellar signature proves control of an address without replacing the Grindy account system or authorizing a token transfer.
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor User
-    participant UI as reward-vault-next
-    participant Freighter
-    participant RPC as Stellar RPC
-    participant Vault as CampaignRewardVault
-    participant Token as Native XLM SAC
+### Horizon
 
-    User->>UI: Enter amount and choose deposit / withdraw
-    UI->>RPC: Load source account
-    UI->>UI: Build contract invocation
-    UI->>RPC: Prepare Soroban transaction
-    UI->>Freighter: Request transaction signature
-    Freighter-->>UI: Return signed XDR
-    UI->>RPC: Submit signed transaction
-    RPC->>Vault: Execute deposit / withdraw
-    Vault->>Token: Transfer token
-    Vault-->>RPC: Emit typed event
-    RPC-->>UI: Return transaction hash and status
-```
+Horizon provides account, transaction, operation, asset, and Claimable Balance data for classic Stellar activity. Grindy uses cursor-based ingestion for the operation streams relevant to each campaign and stores its own normalized campaign records for durable scoring and analytics.
 
-Public implementation:
+### Stellar RPC and Soroban Events
 
-- `examples/reward-vault-next/src/lib/stellar-vault.ts`
-- `contracts/campaign-reward-vault/src/lib.rs`
+Stellar RPC provides contract simulation, transaction submission, contract state, and recent event access. Soroban events are ingested continuously because RPC event retention is intentionally limited. Ledger cursors, transaction hashes, event indices, and contract identifiers form the basis of deterministic idempotency keys.
 
-### 4.3 Future Stellar Campaign Indexing Flow
+### Claimable Balances
 
-```mermaid
-flowchart TD
-    A[Stellar campaign rule] --> B[Protocol adapter]
-    B --> C{Target protocol}
-    C -->|Swaps| D[Soroswap adapter]
-    C -->|LP positions| E[Aquarius adapter]
-    C -->|Lending supply| F[Blend adapter]
-    C -->|Yield allocation| G[DeFindex adapter]
-    D --> H[Normalized Stellar campaign event]
-    E --> H
-    F --> H
-    G --> H
-    H --> I[Idempotency and duplicate check]
-    I --> J[Scoring engine]
-    J --> K[Leaderboard]
-    K --> L[Reward allocation]
-    L --> M[Claimable Balance or Soroban reward path]
-```
+Claimable Balances are the first production settlement lane for straightforward reward campaigns. After a leaderboard is finalized, Grindy prepares participant allocations and the protocol-funded reward account creates balances for the eligible Stellar accounts. Claimant predicates can support claim windows and a protocol recovery path after expiry.
 
-The adapter layer is not implemented in this public repository yet. The intended integration point is to normalize protocol-specific activity into the same campaign-event shape used by Grindy's production scoring and leaderboard engine.
+### Soroban CampaignEscrow and RewardDistributor
 
-## 5. Contract Specification
+Advanced campaigns use Soroban contracts when settlement requires an escrowed reward pool, campaign state, controlled finalization, batched distribution, participant claims, pause controls, or refunds. The contract layer holds only protocol-funded campaign rewards. It never holds participant trading or liquidity positions.
 
-### 5.1 Contract Summary
+### Soroswap Adapter
 
-`CampaignRewardVault` is a Soroban testnet contract that demonstrates protocol-funded reward-pool custody for a campaign-like flow. It is intentionally small and auditable:
+The Soroswap adapter converts eligible swap activity into normalized campaign events. It validates the participant wallet, target assets or route, transaction status, amount, ledger time, and campaign window before sending the event to the scoring engine.
 
-- no user trading custody
-- no hidden admin withdrawal function
-- wallet-authenticated `deposit`
-- wallet-authenticated `withdraw`
-- persistent per-wallet accounting
-- typed contract events for indexing
+### Aquarius Adapter
 
-Public path:
+The Aquarius adapter tracks eligible liquidity deposits, withdrawals, pool identity, position duration, and liquidity changes. Campaign rules can reward sustained liquidity rather than short-lived deposits.
 
-- `contracts/campaign-reward-vault/src/lib.rs`
+### Blend v2 Adapter
 
-### 5.2 Storage Keys
+The Blend v2 adapter tracks eligible supply activity, supported assets, market or pool identity, position changes, and duration. It supports stablecoin-supply and lending-participation campaigns.
 
-| Key | Type | Purpose |
+### DeFindex Adapter
+
+The DeFindex adapter tracks eligible strategy deposits, withdrawals, allocation changes, and position duration. It supports campaigns designed around sustained participation in selected yield strategies.
+
+## 5. Stellar User Flow
+
+1. A participant opens a Stellar campaign in Grindy.
+2. The participant connects a compatible Stellar wallet through Stellar Wallets Kit or Freighter.
+3. The wallet signs a human-readable ownership message containing the public key, domain, nonce, and expiration.
+4. Grindy verifies the signature and links the Stellar public key to the participant profile.
+5. The participant joins a campaign after wallet and campaign eligibility checks.
+6. The participant performs an eligible action directly on the selected Stellar DeFi protocol.
+7. Grindy ingests the operation or Soroban event and normalizes it through the corresponding protocol adapter.
+8. The scoring engine validates campaign rules, updates the participant score, and refreshes the leaderboard.
+9. At campaign close, Grindy finalizes allocations and records the final leaderboard hash.
+10. Rewards settle through Claimable Balances or the Soroban advanced-settlement lane.
+
+## 6. Protocol Partner Flow
+
+1. A protocol partner creates a campaign from the Grindy administration interface.
+2. The partner selects a campaign type: swap, liquidity provision, stablecoin supply, or yield allocation.
+3. The partner selects the eligible protocol, pool or market, assets, campaign period, duration rules, and scoring weights.
+4. The partner funds the reward pool through the configured Stellar settlement lane.
+5. Participants join and perform eligible actions directly on Stellar.
+6. Grindy indexes, normalizes, validates, and scores the activity.
+7. The partner monitors campaign analytics and reviews the final leaderboard.
+8. Grindy finalizes the campaign and rewards settle to participant Stellar accounts.
+
+## 7. Reward Settlement Architecture
+
+### A. Claimable Balances: Simple Production Campaigns
+
+Claimable Balances are used when a campaign has a finalized recipient list and does not require custom on-chain state transitions.
+
+1. The scoring engine freezes the final leaderboard and reward allocation manifest.
+2. The protocol-funded settlement account creates one or more Claimable Balances for eligible participants.
+3. Each allocation records its balance identifier and transaction hash in the campaign settlement log.
+4. Participants claim rewards from their Stellar wallets within the configured claim period.
+5. Expired or unclaimed allocations follow the campaign's declared recovery policy.
+
+This lane minimizes contract complexity while preserving transparent, Stellar-native reward delivery.
+
+### B. Soroban Escrow: Advanced Campaign Modes
+
+Soroban is used when a campaign requires an on-chain funded lifecycle or programmable distribution.
+
+| Contract | Purpose | Core responsibilities |
 | --- | --- | --- |
-| `Admin` | `Address` | Contract administrator set during `init`. |
-| `Balance(Address)` | `i128` | Per-wallet deposited amount. |
-| `Total` | `i128` | Total amount deposited in the vault. |
+| `CampaignRegistry` | Canonical campaign reference | Registers campaign metadata hash, status, settlement asset, and linked escrow. |
+| `CampaignEscrow` | Protocol-funded reward custody | Accepts reward funding, enforces lifecycle state, supports pause, finalization, and refund paths. |
+| `RewardDistributor` | Allocation settlement | Commits the final allocation manifest and supports batched payouts or participant claims with duplicate-claim prevention. |
 
-### 5.3 Public Functions
+Campaign contracts use explicit administrative and protocol roles, emit typed events for indexing, and expose auditable state. Production deployments use contract versioning, testnet validation, deployment records, and an emergency pause/refund path.
 
-| Function | Inputs | Auth | Behavior |
-| --- | --- | --- | --- |
-| `init` | `admin: Address` | `admin.require_auth()` | Initializes contract admin and total balance. Can only run once. |
-| `deposit` | `token: Address`, `from: Address`, `amount: i128` | `from.require_auth()` | Transfers tokens from wallet to vault, updates wallet balance and total. |
-| `withdraw` | `token: Address`, `to: Address`, `amount: i128` | `to.require_auth()` | Transfers previously deposited tokens from vault back to wallet. |
-| `balance` | `user: Address` | none | Reads per-wallet vault balance. |
-| `total_deposited` | none | none | Reads total vault balance. |
-| `admin` | none | none | Reads configured admin. |
+Across both lanes, Grindy does not custody participant trading funds. Reward pools are supplied by protocol partners and are separated from participant DeFi positions.
 
-### 5.4 Errors
+## 8. Security and Anti-Abuse
 
-| Error | Code | Trigger |
-| --- | --- | --- |
-| `AlreadyInitialized` | `1` | `init` called more than once. |
-| `NotInitialized` | `2` | State-changing function called before `init`. |
-| `InvalidAmount` | `3` | Amount is zero or negative. |
-| `InsufficientBalance` | `4` | Withdraw amount exceeds wallet vault balance. |
+- **Wallet ownership proof:** every linked address requires a signed, expiring, single-use challenge.
+- **Duplicate wallet prevention:** a Stellar address cannot be linked to multiple participant profiles.
+- **Duplicate event prevention:** transaction hash, ledger, event index, protocol, and action data form deterministic idempotency keys.
+- **Replay-safe ingestion:** each source maintains a checkpoint and reprocessing remains idempotent.
+- **Campaign eligibility:** protocol, pool, asset, action, amount, and campaign time window are validated before scoring.
+- **Liquidity quality controls:** minimum LP duration and short-duration deposit flags reduce incentive-only liquidity cycling.
+- **Activity risk flags:** repeated counterparties, circular patterns, abnormal frequency, and related-wallet signals can trigger review.
+- **Controlled finalization:** campaign results remain reviewable before the final leaderboard and allocation manifest are frozen.
+- **Settlement integrity:** final leaderboard and allocation hashes create an auditable link between scoring and payout.
+- **Audit trail:** wallet links, indexed events, score changes, campaign state changes, and settlement transactions are recorded.
+- **Advanced-mode safeguards:** Soroban settlement includes role separation, duplicate-claim prevention, pause controls, and a refund path.
 
-### 5.5 Events
+## 9. SCF Build Scope
 
-| Event | Topics | Data |
-| --- | --- | --- |
-| `VaultInitialized` | `vault`, `init`, `admin` | none |
-| `VaultDeposit` | `vault`, `deposit`, `token`, `wallet` | `amount` |
-| `VaultWithdraw` | `vault`, `withdraw`, `token`, `wallet` | `amount` |
+### MVP
 
-### 5.6 Testnet Deployment
+- Stellar wallet connection through Stellar Wallets Kit and Freighter;
+- signed wallet ownership proof and wallet-to-profile linking;
+- duplicate wallet-link prevention;
+- Stellar campaign enrollment;
+- Stellar event indexer MVP with durable cursors and idempotency;
+- first protocol campaign adapter;
+- Stellar event scoring and leaderboard updates.
 
-| Item | Value |
+### Testnet
+
+- Soroswap swap-campaign flow;
+- Aquarius liquidity-campaign flow;
+- Blend v2 supply-campaign adapter;
+- DeFindex yield-allocation adapter;
+- Claimable Balance reward test flow;
+- CampaignEscrow and RewardDistributor testnet contracts;
+- end-to-end campaign simulation from wallet connection to reward settlement.
+
+### Mainnet
+
+- production Stellar indexing and monitoring;
+- mainnet wallet identity and campaign enrollment;
+- production protocol adapters;
+- mainnet Claimable Balance settlement;
+- mainnet Soroban advanced settlement;
+- reusable campaign templates for swaps, liquidity, lending supply, and yield allocation.
+
+## 10. Out of Scope for the Initial Mainnet Release
+
+- Protocol reward pools, participant rewards, and prize pools are funded by protocol partners, not the SCF Build.
+- Marketing and user-acquisition spending are outside the technical integration scope.
+- Grindy does not custody participant trading funds or DeFi positions.
+- Near Intents may be evaluated as a later cross-chain onboarding extension after the Stellar-native campaign flow is stable.
+- Stellar Broker is not required for the first production release.
+
+## 11. Technical Readiness Proof
+
+The public [Grindy Stellar Integration repository](https://github.com/MuchuCAT/grindy-stellar-integration) contains working, independently testable Stellar modules:
+
+- Stellar Wallets Kit and Freighter connection flows;
+- human-readable wallet ownership message construction;
+- backend-safe Ed25519 signature verification;
+- browser wallet ownership demo;
+- Next.js Freighter transaction demo;
+- a Rust/Soroban `CampaignRewardVault` contract with deposit, withdraw, balance, and total-accounting functions;
+- Soroban contract tests;
+- a testnet deployment with verified deposit and withdrawal transactions;
+- setup and local verification commands;
+- MIT license.
+
+**Live Stellar testnet demo:** [reward-vault-next.vercel.app](https://reward-vault-next.vercel.app)
+
+| Testnet proof | Public reference |
 | --- | --- |
-| Network | Stellar testnet |
-| Contract ID | `CAIBPSOZD572Z6F7M36W3PWGXP2BNGTAXGPKZFU5DZ3QAQIRQ3MXGFIS` |
-| Native token SAC | `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC` |
-| Admin public key | `GCDWZOFPTZQX7P4GEFK2XRDJVKOFMFFUJK4SOS37IRSKYG5WVTUIRZIT` |
-| WASM hash | `8ef2c8f83fa0852593a9228e374b4113ae586b19f3da9a52eba52dcc29b5bc2d` |
+| CampaignRewardVault contract | [`CAIBPSO...MXGFIS`](https://stellar.expert/explorer/testnet/contract/CAIBPSOZD572Z6F7M36W3PWGXP2BNGTAXGPKZFU5DZ3QAQIRQ3MXGFIS) |
+| Contract deployment | [Stellar Expert transaction](https://stellar.expert/explorer/testnet/tx/2a4e53c86cc612df553c7b1fc21b6b4d8a0860c822ba3736c12b752a9fe386a6) |
+| Contract initialization | [Stellar Expert transaction](https://stellar.expert/explorer/testnet/tx/43dd8010fb0558433da0e0d5e5ecf952e0d824cac5872d9347321fbd393c68dd) |
+| Test deposit | [Stellar Expert transaction](https://stellar.expert/explorer/testnet/tx/11294adf236564f4ef164b3b1e1778b6ce831809aa8e2a1259623ad29fdfd79c) |
+| Test withdrawal | [Stellar Expert transaction](https://stellar.expert/explorer/testnet/tx/b096ff71470b13fc3a5c7407dfcc8d6221664766fdd57361ce2e40224529acd5) |
 
-Evidence:
+The testnet vault is a deliberately narrow readiness proof. The production architecture separates simple Claimable Balance campaigns from advanced Soroban campaign escrow and distribution.
 
-- Upload transaction: https://stellar.expert/explorer/testnet/tx/b98d43723ea7978a3aac84f38463c6dc4ad929244fc9158088786357c0dd0c2a
-- Deploy transaction: https://stellar.expert/explorer/testnet/tx/2a4e53c86cc612df553c7b1fc21b6b4d8a0860c822ba3736c12b752a9fe386a6
-- Init transaction: https://stellar.expert/explorer/testnet/tx/43dd8010fb0558433da0e0d5e5ecf952e0d824cac5872d9347321fbd393c68dd
-- Deposit transaction: https://stellar.expert/explorer/testnet/tx/11294adf236564f4ef164b3b1e1778b6ce831809aa8e2a1259623ad29fdfd79c
-- Withdraw transaction: https://stellar.expert/explorer/testnet/tx/b096ff71470b13fc3a5c7407dfcc8d6221664766fdd57361ce2e40224529acd5
+## 12. References
 
-## 6. Production Integration Points
-
-This repository intentionally avoids production application code. The integration points are stable boundaries that the production app can consume.
-
-| Public module | Production integration point | Responsibility |
-| --- | --- | --- |
-| `@grindy/stellar-wallet-link` | Profile / wallet settings UI | Connect wallet, build ownership challenge, request signature. |
-| `@grindy/stellar-signature-verifier` | Backend wallet-link mutation | Verify signature before persisting a wallet link. |
-| `CampaignRewardVault` | Reward settlement service | Provide a Soroban reward-pool primitive for campaign settlement. |
-| `reward-vault-next` | Integration reference UI | Demonstrate contract invocation with Freighter and Stellar RPC. |
-| Future Stellar adapters | Campaign event ingestion worker | Normalize protocol actions into campaign events. |
-
-## 7. Proposed Data Model Additions
-
-These tables/collections are proposed for the production integration. They are not present in this public repository.
-
-| Model | Key fields | Purpose |
-| --- | --- | --- |
-| `stellarWalletLinks` | `userId`, `publicKey`, `verifiedAt`, `signatureNonceId` | One verified Stellar wallet per profile or one-to-many if enabled later. |
-| `stellarCampaignRules` | `campaignId`, `protocol`, `pool`, `asset`, `eligibleActions`, `startAt`, `endAt` | Defines what on-chain actions count for a campaign. |
-| `indexedStellarEvents` | `eventId`, `ledger`, `txHash`, `wallet`, `protocol`, `action`, `amount`, `timestamp` | Stores normalized on-chain actions with idempotency keys. |
-| `stellarScores` | `campaignId`, `wallet`, `score`, `lastEventAt` | Holds computed campaign score from normalized events. |
-| `stellarRewardVaults` | `campaignId`, `contractId`, `tokenContractId`, `status` | Links a campaign to deployed reward settlement contracts. |
-| `stellarSettlements` | `campaignId`, `wallet`, `amount`, `txHash`, `status` | Tracks reward settlement and payout verification. |
-
-## 8. Protocol Adapter Integration Points
-
-The adapter layer should normalize protocol-specific activity into a single event shape:
-
-```ts
-type NormalizedStellarCampaignEvent = {
-  idempotencyKey: string;
-  campaignId: string;
-  protocol: "soroswap" | "aquarius" | "blend" | "defindex";
-  action: "swap" | "lp_deposit" | "lp_withdraw" | "lending_supply" | "yield_allocate";
-  wallet: string;
-  asset?: string;
-  pool?: string;
-  amount?: string;
-  txHash: string;
-  ledger: number;
-  timestamp: string;
-};
-```
-
-Adapter responsibilities:
-
-- `Soroswap`: routed swaps, eligible pairs, swap volume.
-- `Aquarius`: LP deposits, withdrawals, liquidity duration.
-- `Blend`: stablecoin supply, lending position duration.
-- `DeFindex`: yield allocation, strategy participation duration.
-
-Common requirements:
-
-- deterministic idempotency key
-- duplicate event rejection
-- ledger cursor checkpointing
-- protocol-specific validation
-- normalized scoring inputs
-- replay-safe backfills
-
-## 9. Security Boundaries
-
-### Wallet ownership
-
-- The ownership message is human-readable.
-- It includes domain, user ID, public key, nonce, issue time, and optional expiration.
-- The signature does not authorize token transfer.
-- The backend must reject expired or reused nonces.
-- The backend must reject wallet links already assigned to another profile.
-
-### Soroban vault
-
-- `deposit` requires `from.require_auth()`.
-- `withdraw` requires `to.require_auth()`.
-- `withdraw` cannot exceed the caller's stored vault balance.
-- The contract stores accounting state in persistent storage.
-- The current testnet vault is not a full audited production escrow.
-
-### Environment variables
-
-The public Next.js example uses only client-safe variables:
-
-```text
-NEXT_PUBLIC_STELLAR_RPC_URL
-NEXT_PUBLIC_STELLAR_NETWORK_PASSPHRASE
-NEXT_PUBLIC_REWARD_VAULT_CONTRACT_ID
-NEXT_PUBLIC_DEMO_TOKEN_CONTRACT_ID
-```
-
-No private production credential or backend secret is required by this public repository.
-
-## 10. Verification Commands
-
-Install and validate:
-
-```bash
-pnpm install
-pnpm check-types
-pnpm test
-pnpm build
-```
-
-Build and test the Soroban contract:
-
-```bash
-pnpm contract:test
-pnpm contract:build
-```
-
-Run the wallet ownership demo:
-
-```bash
-pnpm demo
-```
-
-Run the reward vault transaction demo:
-
-```bash
-pnpm vault:ui
-```
-
-Read contract state:
-
-```bash
-stellar contract invoke \
-  --id CAIBPSOZD572Z6F7M36W3PWGXP2BNGTAXGPKZFU5DZ3QAQIRQ3MXGFIS \
-  --source-account <LOCAL_TESTNET_IDENTITY> \
-  --network testnet \
-  --send no \
-  -- total_deposited
-```
-
-## 11. Current Limitations
-
-- The public repository contains reusable Stellar integration modules, not the production Grindy application.
-- The Soroban contract is a testnet proof, not a full production escrow.
-- Protocol adapters for Soroswap, Aquarius, Blend, and DeFindex are defined as integration targets but are not implemented in this public repository yet.
-- Production scoring, leaderboard, and reward allocation remain integration points outside this public repository.
-
-## 12. Next Engineering Steps
-
-1. Add production wallet-link persistence using the signature verifier.
-2. Add duplicate wallet-link prevention at the backend persistence layer.
-3. Add Stellar campaign rule models.
-4. Implement Horizon / Stellar RPC event ingestion.
-5. Add Soroswap and Aquarius adapters first because swaps and LP duration map directly to existing campaign primitives.
-6. Add Blend and DeFindex adapters for stablecoin supply and yield allocation campaigns.
-7. Extend reward settlement from the current vault proof toward campaign finalization and reward allocation.
+- [Grindy live application](https://app.grindy.fun)
+- [Grindy Stellar Integration repository](https://github.com/MuchuCAT/grindy-stellar-integration)
+- [Grindy Stellar testnet demo](https://reward-vault-next.vercel.app)
+- [Stellar wallet integration](https://developers.stellar.org/docs/tools/developer-tools/wallets)
+- [Freighter developer documentation](https://docs.freighter.app/)
+- [Horizon API](https://developers.stellar.org/docs/data/apis/horizon)
+- [Stellar RPC](https://developers.stellar.org/docs/data/apis/rpc)
+- [Soroban event ingestion](https://developers.stellar.org/docs/build/guides/events/ingest)
+- [Claimable Balances](https://developers.stellar.org/docs/build/guides/transactions/claimable-balances)
+- [Stellar smart contracts](https://developers.stellar.org/docs/build/smart-contracts/overview)

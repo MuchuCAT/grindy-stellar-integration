@@ -9,6 +9,7 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@grindy/stellar-signature-verifier": "workspace:*",
     "@grindy/stellar-wallet-link": "workspace:*",
     "@stellar/freighter-api": "^6.0.1",
     "@stellar/stellar-sdk": "^15.1.0",

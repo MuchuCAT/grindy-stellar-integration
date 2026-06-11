@@ -6,6 +6,8 @@ Grindy is already live as B2B campaign infrastructure for crypto and DeFi protoc
 
 **Technical architecture**: [`docs/technical-architecture.md`](docs/technical-architecture.md)
 
+**Live integration demo**: [reward-vault-next.vercel.app](https://reward-vault-next.vercel.app)
+
 **Contract on testnet**: [`CAIBPSOZD572Z6F7M36W3PWGXP2BNGTAXGPKZFU5DZ3QAQIRQ3MXGFIS`](https://stellar.expert/explorer/testnet/contract/CAIBPSOZD572Z6F7M36W3PWGXP2BNGTAXGPKZFU5DZ3QAQIRQ3MXGFIS)
 
 ## What This Is
@@ -28,7 +30,7 @@ The public repository is intentionally focused. It does not expose the private G
 - **Duplicate-Link Ready** — The ownership payload includes stable profile and wallet identifiers so the production backend can prevent one wallet from being linked to multiple profiles.
 - **Soroban Reward Vault** — A testnet contract demonstrates protocol-funded reward custody with authenticated deposits, withdrawals, persistent accounting, and typed events.
 - **Executable Testnet UI** — The Next.js vault demo connects Freighter, prepares a Soroban transaction, requests a signature, submits to Stellar RPC, and returns a public transaction hash.
-- **Architecture Source of Truth** — The technical architecture includes C4-style diagrams, wallet data flow, vault transaction flow, contract specification, and production integration points.
+- **Architecture Source of Truth** — The technical architecture presents the current product, the Stellar-native target architecture, campaign data flow, settlement design, security model, and SCF Build scope.
 
 ## Architecture Overview
 
@@ -67,7 +69,7 @@ The public repository is intentionally focused. It does not expose the private G
 └─────────────────────────────────────────────────────────────┘
 ```
 
-For C4-style diagrams and end-to-end sequence diagrams, see [`docs/technical-architecture.md`](docs/technical-architecture.md).
+For the product architecture, C4 system context, campaign data flow, and Stellar settlement model, see [`docs/technical-architecture.md`](docs/technical-architecture.md).
 
 ## Project Structure
 
@@ -87,7 +89,7 @@ grindy-stellar-integration/
 │       ├── src/lib.rs                 # Soroban contract
 │       └── README.md                  # deployment and testnet evidence
 └── docs/
-    ├── technical-architecture.md      # C4 diagrams, data flow, contract spec, integration points
+    ├── technical-architecture.md      # product architecture and Stellar-native target design
     ├── ownership-message.md           # ownership proof format
     ├── security.md                    # wallet and custody boundaries
     └── setup.md                       # local setup notes
@@ -104,7 +106,7 @@ grindy-stellar-integration/
 | `total_deposited()` | None | Reads the total vault balance. |
 | `admin()` | None | Reads the configured admin address. |
 
-The current contract is a focused testnet primitive, not a full production escrow. Production settlement is expected to add campaign finalization, allocation proofs, pause/refund controls, duplicate payout prevention, and audit before mainnet use.
+The current contract is a focused testnet primitive, not a full production escrow. The production settlement architecture adds campaign finalization, allocation proofs, pause/refund controls, duplicate payout prevention, and mainnet security review.
 
 ## Testnet Evidence
 
