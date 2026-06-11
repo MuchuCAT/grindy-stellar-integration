@@ -2,7 +2,7 @@
 
 Open-source Stellar wallet, Soroban, and testnet integration modules for Grindy.
 
-Grindy is already live as B2B campaign infrastructure for crypto and DeFi protocols. The production application handles campaigns, profiles, leaderboards, scoring, analytics, CEX read-only tracking, and reward operations. This public repository exposes the reusable Stellar modules and testnet proof components that can be tested independently from the production application.
+Grindy is already live as B2B campaign infrastructure for crypto and DeFi protocols. The production application handles campaigns, profiles, leaderboards, scoring, analytics, CEX read-only tracking and reward operations. This public repository exposes the reusable Stellar modules and testnet proof components that can be tested independently from the production application.
 
 **Technical architecture**: [`docs/technical-architecture.md`](docs/technical-architecture.md)
 
@@ -24,7 +24,7 @@ The public repository is intentionally focused. It does not expose the private G
 
 ## Key Features
 
-- **Wallet Ownership Proof** — A user connects a Stellar wallet, signs a deterministic ownership message, and receives a verifiable proof that can be persisted by the production profile system.
+- **Wallet Ownership Proof** — A user connects a Stellar wallet, signs a deterministic ownership message and receives a verifiable proof that can be persisted by the production profile system.
 - **Freighter and Wallets Kit Support** — The wallet package includes Freighter-first flows and Stellar Wallets Kit-compatible helpers.
 - **Backend Signature Verification** — The verifier package validates Stellar Ed25519 signatures without needing frontend wallet state.
 - **Duplicate-Link Ready** — The ownership payload includes stable profile and wallet identifiers so the production backend can prevent one wallet from being linked to multiple profiles.
@@ -106,7 +106,7 @@ grindy-stellar-integration/
 | `total_deposited()` | None | Reads the total vault balance. |
 | `admin()` | None | Reads the configured admin address. |
 
-The current contract is a focused testnet primitive, not a full production escrow. The production settlement architecture adds campaign finalization, allocation proofs, pause/refund controls, duplicate payout prevention, and mainnet security review.
+The current contract is a focused testnet primitive, not a full production escrow. The production settlement architecture adds campaign finalization, allocation proofs, pause/refund controls, duplicate payout prevention and mainnet security review.
 
 ## Testnet Evidence
 
@@ -156,7 +156,7 @@ pnpm contract:build
 pnpm demo
 ```
 
-Open `http://localhost:5173`, connect a Stellar wallet, sign the ownership message, and verify the signature locally.
+Open `http://localhost:5173`, connect a Stellar wallet, sign the ownership message and verify the signature locally.
 
 ### Run the reward vault transaction demo
 
@@ -164,7 +164,7 @@ Open `http://localhost:5173`, connect a Stellar wallet, sign the ownership messa
 pnpm vault:ui
 ```
 
-Open `http://localhost:3040`, connect Freighter on testnet, enter an amount, and submit a `deposit` or `withdraw` transaction against the deployed vault.
+Open `http://localhost:3040`, connect Freighter on testnet, enter an amount and submit a `deposit` or `withdraw` transaction against the deployed vault.
 
 ## Test Suite
 
