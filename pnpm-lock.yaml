@@ -91,6 +91,9 @@ importers:
       '@stellar/stellar-sdk':
         specifier: ^15.1.0
         version: 15.1.0
+      buffer:
+        specifier: ^6.0.3
+        version: 6.0.3
       tweetnacl:
         specifier: ^1.0.3
         version: 1.0.3

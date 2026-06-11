@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@stellar/stellar-sdk": "^15.1.0",
+    "buffer": "^6.0.3",
     "tweetnacl": "^1.0.3"
   },
   "devDependencies": {
@@ -26,4 +27,3 @@
     "vitest": "^3.2.4"
   }
 }
-

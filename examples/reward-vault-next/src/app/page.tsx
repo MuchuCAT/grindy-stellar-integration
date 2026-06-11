@@ -76,7 +76,10 @@ export default function StellarDemo() {
 	const [error, setError] = useState<string | null>(null);
 	const [demoGuideOpen, setDemoGuideOpen] = useState(false);
 
-	const readyForTx = Boolean(wallet && vaultContractId && tokenContractId);
+	const isTestnetWallet = wallet?.networkPassphrase === networkPassphrase;
+	const readyForTx = Boolean(
+		wallet && isTestnetWallet && vaultContractId && tokenContractId
+	);
 
 	useEffect(() => {
 		if (!demoGuideOpen) return;
@@ -117,6 +120,14 @@ export default function StellarDemo() {
 		setStatus("Opening Freighter...");
 		try {
 			const connection = await connectWithFreighter();
+			if (connection.networkPassphrase !== networkPassphrase) {
+				setWallet(null);
+				setStatus(null);
+				setError(
+					`Freighter is connected to ${connection.network ?? "another network"}. Switch Freighter to Testnet, then reconnect.`
+				);
+				return;
+			}
 			setWallet({
 				publicKey: connection.publicKey,
 				network: connection.network,
@@ -300,7 +311,7 @@ export default function StellarDemo() {
 
 				<div className="lab-shell">
 					<aside className="lab-sidebar">
-						<div className="lab-network"><span className="online-dot" /> Testnet connected</div>
+						<div className="lab-network"><span className="online-dot" /> {isTestnetWallet ? "Testnet connected" : "Testnet required"}</div>
 						<div className="wallet-summary"><span>Active wallet</span><strong>{wallet ? shorten(wallet.publicKey) : "Not connected"}</strong><small>{wallet?.network ?? "Freighter required"}</small></div>
 						<button className="button button-primary sidebar-button" onClick={connect} type="button"><WalletIcon /> {wallet ? "Reconnect" : "Connect Freighter"}</button>
 						<div className="contract-mini"><span>CampaignRewardVault</span><a href={contractUrl} rel="noreferrer" target="_blank">{shorten(vaultContractId)} ↗</a></div>

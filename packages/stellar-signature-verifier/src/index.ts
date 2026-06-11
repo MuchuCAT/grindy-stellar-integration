@@ -1,5 +1,8 @@
-import { StrKey } from "@stellar/stellar-sdk";
+import { hash, StrKey } from "@stellar/stellar-sdk";
+import { Buffer } from "buffer";
 import nacl from "tweetnacl";
+
+const STELLAR_SIGNED_MESSAGE_PREFIX = "Stellar Signed Message:\n";
 
 export type SignatureEncoding = "base64" | "hex" | "utf8";
 
@@ -18,7 +21,7 @@ export function verifyStellarOwnershipSignature(
 	}
 
 	const publicKeyBytes = StrKey.decodeEd25519PublicKey(input.publicKey);
-	const messageBytes = new TextEncoder().encode(input.message);
+	const messageBytes = encodeSep53Message(input.message);
 	const signatureBytes = decodeSignature(
 		input.signature,
 		input.signatureEncoding ?? "base64"
@@ -32,6 +35,16 @@ export function verifyStellarOwnershipSignature(
 		messageBytes,
 		signatureBytes,
 		publicKeyBytes
+	);
+}
+
+/**
+ * Freighter and SEP-53 compatible wallets sign the SHA-256 hash of the
+ * canonical Stellar message prefix followed by the human-readable payload.
+ */
+export function encodeSep53Message(message: string): Uint8Array {
+	return hash(
+		Buffer.from(`${STELLAR_SIGNED_MESSAGE_PREFIX}${message}`, "utf8")
 	);
 }
 
@@ -52,4 +65,3 @@ export function decodeSignature(
 		}
 	}
 }
-
