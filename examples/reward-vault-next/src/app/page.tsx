@@ -246,7 +246,6 @@ export default function StellarDemo() {
 					<div className="hero-actions">
 						<button className="button button-primary" onClick={startDemo} type="button"><WalletIcon /> Try the live demo</button>
 						<a className="button button-secondary" href={architectureUrl} rel="noreferrer" target="_blank"><DocsIcon /> Read the architecture</a>
-						<a className="button button-secondary" href="/campaigns/testnet-001">Campaign #001 proof</a>
 					</div>
 					<div className="hero-meta"><span>No trading custody</span><span>Open-source integration</span><span>Public testnet evidence</span></div>
 				</div>
@@ -307,6 +306,9 @@ export default function StellarDemo() {
 					<div className="lab-tabs" role="tablist" aria-label="Demo mode">
 						<button aria-selected={labView === "identity"} className={labView === "identity" ? "active" : ""} onClick={() => setLabView("identity")} role="tab" type="button">Wallet identity</button>
 						<button aria-selected={labView === "vault"} className={labView === "vault" ? "active" : ""} onClick={() => setLabView("vault")} role="tab" type="button">Reward vault</button>
+						<a aria-selected="false" className="campaign-proof-tab" href="/campaigns/testnet-001" role="tab">
+							<span className="proof-tab-dot" /> Campaign #001 proof
+						</a>
 					</div>
 				</div>
 
@@ -343,6 +345,21 @@ export default function StellarDemo() {
 						{error ? <div className="global-status error-status">{error}</div> : null}
 					</div>
 				</div>
+
+				<a className="campaign-proof-followup" href="/campaigns/testnet-001">
+					<div className="proof-followup-copy">
+						<p className="eyebrow">Public end-to-end evidence</p>
+						<h3>Follow Campaign #001 from activity to settlement.</h3>
+						<p>Inspect the source transaction, normalized event, score, leaderboard, allocation commitment, and testnet payout in one readable proof trail.</p>
+					</div>
+					<div className="proof-followup-flow" aria-hidden="true">
+						<span>Activity</span><i />
+						<span>Event</span><i />
+						<span>Score</span><i />
+						<span>Settlement</span>
+					</div>
+					<div className="proof-followup-cta">Open proof <ArrowIcon /></div>
+				</a>
 			</section>
 
 			<footer>
