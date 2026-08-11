@@ -1,0 +1,44 @@
+name: Campaign Rails CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  typescript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.8.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check-types
+      - run: pnpm test
+      - run: pnpm build
+
+  soroban:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32v1-none
+      - uses: Swatinem/rust-cache@v2
+      - name: Test Soroban contracts
+        run: |
+          cargo test --manifest-path contracts/campaign-reward-vault/Cargo.toml
+          cargo test --manifest-path contracts/campaign-escrow/Cargo.toml
+          cargo test --manifest-path contracts/reward-distributor/Cargo.toml
+      - name: Build Soroban WASM
+        run: |
+          cargo build --target wasm32v1-none --release --manifest-path contracts/campaign-reward-vault/Cargo.toml
+          cargo build --target wasm32v1-none --release --manifest-path contracts/campaign-escrow/Cargo.toml
+          cargo build --target wasm32v1-none --release --manifest-path contracts/reward-distributor/Cargo.toml

@@ -1,41 +1,50 @@
-# Security Notes
+# Security Model
 
-## Non-custodial by design
+## Custody Boundary
 
-This module never asks for a seed phrase and never takes custody of funds. It only asks the wallet to sign a human-readable ownership message.
+Grindy never asks for a seed phrase and never takes custody of participant trading funds, liquidity positions, or lending positions. Wallet ownership uses a human-readable signature that cannot authorize a token transfer.
 
-## Duplicate wallet prevention
+Only protocol-funded campaign rewards enter `CampaignEscrow` or `RewardDistributor`. Those balances are isolated from participant DeFi activity.
 
-The production Grindy backend must enforce that a Stellar public key can only be linked to one Grindy user profile at a time.
+## Wallet Identity
 
-Recommended backend checks:
+- Every ownership challenge contains the Grindy domain, profile identifier, Stellar public key, nonce, issue time, expiry, and an explicit non-transaction statement.
+- The backend verifies the Ed25519 signature, rejects reused or expired nonces, and records successful consumption.
+- A normalized Stellar public key can be linked to one profile only.
+- Signatures, session tokens, private keys, seed phrases, API keys, and deployment credentials are never written to application logs.
 
-- store the normalized Stellar public key
-- index the public key for fast duplicate lookup
-- reject already-linked public keys
-- expire ownership challenges quickly
-- mark nonce values as used after successful verification
+## CampaignEscrow Roles
 
-## Message scope
+- `admin` initializes campaigns, finalizes allocations, and settles finalized campaigns.
+- `protocol_owner` or `admin` can activate, pause, resume, and refund according to lifecycle rules.
+- Funding requires the funder's Stellar authorization and an actual token transfer.
+- Finalization is accepted once, after campaign expiry, with a non-zero participant count and an allocation that does not exceed the pool.
+- Settlement atomically routes the committed allocation to the distributor and returns unused rewards to the protocol owner.
+- Refund is only available from the paused state.
 
-The signed message must clearly say it is only for wallet ownership verification and does not authorize a transaction.
+The current contracts use one configured admin address. Production deployments separate operational signers, document rotation procedures, and place privileged actions behind an appropriate multisignature policy.
 
-## Replay protection
+## RewardDistributor Integrity
 
-Every challenge must include a nonce and expiration timestamp. The backend must reject reused or expired nonces.
+- Allocation root, total, and participant count are committed once.
+- Claims use directional Merkle proofs over Soroban XDR allocation leaves.
+- A persistent per-wallet flag rejects duplicate claims.
+- Total distributed rewards cannot exceed the committed allocation or available contract balance.
+- Self-claims require participant authorization; batch distribution requires admin authorization.
+- Remaining funds can return to the protocol owner only after the claim deadline.
 
-## Production logging
+## Event Integrity
 
-Safe to log:
+- Source transaction hash, ledger, event index, protocol, and action generate deterministic event and idempotency keys.
+- Decimal amounts remain strings until converted with explicit asset precision.
+- Adapter eligibility and scoring policy are separate: adapters validate protocol activity, while Grindy campaign rules calculate contribution.
+- Public fixtures preserve source transaction references so normalized events can be reproduced.
 
-- public key
-- challenge ID
-- verification status
-- timestamp
+## Operational Controls
 
-Do not log:
+- Contract state changes and reward transfers emit typed Soroban events.
+- Campaign finalization stores the allocation hash, amount, and participant count.
+- Deployment IDs and transaction hashes are published as testnet evidence.
+- GitHub Actions reruns TypeScript tests, Soroban tests, and WASM builds.
 
-- full raw signatures in verbose logs
-- auth session tokens
-- private keys or seed phrases
-- API keys
+The deployed contracts are testnet readiness software. They have not received an external security audit and must not be treated as audited mainnet contracts.
