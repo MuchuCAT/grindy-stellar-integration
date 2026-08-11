@@ -2,7 +2,7 @@
   "name": "grindy-stellar-integration",
   "version": "0.1.0",
   "private": true,
-  "description": "Open-source Stellar wallet, Soroban, and testnet integration modules for Grindy.",
+  "description": "Open-source attribution and settlement rails for measurable Stellar DeFi campaigns.",
   "license": "MIT",
   "type": "module",
   "packageManager": "pnpm@10.8.1",
@@ -12,11 +12,20 @@
     "test": "pnpm -r test",
     "demo": "pnpm --filter grindy-stellar-wallet-demo dev",
     "vault:ui": "pnpm --filter grindy-reward-vault-next dev",
-    "contract:build": "stellar contract build --manifest-path contracts/campaign-reward-vault/Cargo.toml",
-    "contract:test": "cargo test --manifest-path contracts/campaign-reward-vault/Cargo.toml"
+    "contract:build": "pnpm contract:build:all",
+    "contract:build:all": "pnpm contract:build:vault && pnpm contract:build:escrow && pnpm contract:build:distributor",
+    "contract:build:vault": "stellar contract build --manifest-path contracts/campaign-reward-vault/Cargo.toml",
+    "contract:build:escrow": "stellar contract build --manifest-path contracts/campaign-escrow/Cargo.toml",
+    "contract:build:distributor": "stellar contract build --manifest-path contracts/reward-distributor/Cargo.toml",
+    "contract:test": "pnpm contract:test:all",
+    "contract:test:all": "pnpm contract:test:vault && pnpm contract:test:escrow && pnpm contract:test:distributor",
+    "contract:test:vault": "cargo test --manifest-path contracts/campaign-reward-vault/Cargo.toml",
+    "contract:test:escrow": "cargo test --manifest-path contracts/campaign-escrow/Cargo.toml",
+    "contract:test:distributor": "cargo test --manifest-path contracts/reward-distributor/Cargo.toml"
   },
   "workspaces": [
     "packages/*",
+    "adapters/*",
     "examples/*"
   ],
   "devDependencies": {

@@ -1,128 +1,154 @@
-# Grindy Stellar Integration
+# Grindy Campaign Rails
 
-Open-source Stellar wallet, Soroban, and testnet integration modules for Grindy.
+Open-source attribution and settlement infrastructure for measurable Stellar DeFi campaigns.
 
-Grindy is already live as B2B campaign infrastructure for crypto and DeFi protocols. The production application handles campaigns, profiles, leaderboards, scoring, analytics, CEX read-only tracking and reward operations. This public repository exposes the reusable Stellar modules and testnet proof components that can be tested independently from the production application.
+[Grindy.fun](https://www.grindy.fun) is the first reference implementation. The live product already operates campaign enrollment, scoring, leaderboards, analytics, and reward operations. This repository contains the reusable Stellar components that connect verifiable wallet activity to campaign attribution and transparent settlement.
 
-**Technical architecture**: [`docs/technical-architecture.md`](docs/technical-architecture.md)
+- **Live Stellar lab:** [stellar.grindy.fun](https://stellar.grindy.fun)
+- **Campaign #001:** [stellar.grindy.fun/campaigns/testnet-001](https://stellar.grindy.fun/campaigns/testnet-001)
+- **Technical architecture:** [docs/technical-architecture.md](docs/technical-architecture.md)
+- **License:** [MIT](LICENSE)
 
-**Live integration demo**: [reward-vault-next.vercel.app](https://reward-vault-next.vercel.app)
+## End-to-End Proof
 
-**Contract on testnet**: [`CAIBPSOZD572Z6F7M36W3PWGXP2BNGTAXGPKZFU5DZ3QAQIRQ3MXGFIS`](https://stellar.expert/explorer/testnet/contract/CAIBPSOZD572Z6F7M36W3PWGXP2BNGTAXGPKZFU5DZ3QAQIRQ3MXGFIS)
-
-## What This Is
-
-A public implementation of Grindy's first Stellar-native integration layer:
-
-- Stellar wallet connection and ownership proof signing.
-- Backend-safe Stellar signature verification.
-- Wallet-to-profile linking primitives for the production Grindy app.
-- Soroban `CampaignRewardVault` testnet contract with authenticated `deposit` and `withdraw`.
-- Next.js Freighter demo that builds, signs, submits, and verifies a vault transaction.
-
-The public repository is intentionally focused. It does not expose the private Grindy production codebase, campaign database, scoring internals, exchange API integrations, admin tooling, or deployment configuration.
-
-## Key Features
-
-- **Wallet Ownership Proof** — A user connects a Stellar wallet, signs a deterministic ownership message and receives a verifiable proof that can be persisted by the production profile system.
-- **Freighter and Wallets Kit Support** — The wallet package includes Freighter-first flows and Stellar Wallets Kit-compatible helpers.
-- **Backend Signature Verification** — The verifier package validates Stellar Ed25519 signatures without needing frontend wallet state.
-- **Duplicate-Link Ready** — The ownership payload includes stable profile and wallet identifiers so the production backend can prevent one wallet from being linked to multiple profiles.
-- **Soroban Reward Vault** — A testnet contract demonstrates protocol-funded reward custody with authenticated deposits, withdrawals, persistent accounting, and typed events.
-- **Executable Testnet UI** — The Next.js vault demo connects Freighter, prepares a Soroban transaction, requests a signature, submits to Stellar RPC, and returns a public transaction hash.
-- **Architecture Source of Truth** — The technical architecture presents the current product, the Stellar-native target architecture, campaign data flow, settlement design, security model, and SCF Build scope.
-
-## Architecture Overview
+Grindy Stellar Testnet Campaign #001 demonstrates the complete public readiness path:
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│                   Public Stellar Repository                  │
-│                                                             │
-│  ┌──────────────────────┐  ┌─────────────────────────────┐  │
-│  │ stellar-wallet-link  │  │ stellar-signature-verifier  │  │
-│  │ connect + sign proof │  │ backend Ed25519 validation  │  │
-│  └──────────┬───────────┘  └──────────────┬──────────────┘  │
-│             │                             │                 │
-│  ┌──────────▼───────────┐                 │                 │
-│  │ Wallet ownership UI  │                 │                 │
-│  │ Vite + React demo    │                 │                 │
-│  └──────────────────────┘                 │                 │
-│                                           │                 │
-│  ┌──────────────────────┐  ┌──────────────▼──────────────┐  │
-│  │ reward-vault-next    │  │ CampaignRewardVault          │  │
-│  │ Freighter transaction│──│ Soroban Rust contract        │  │
-│  │ demo                 │  │ deposit / withdraw / events  │  │
-│  └──────────┬───────────┘  └──────────────┬──────────────┘  │
-└─────────────┼─────────────────────────────┼─────────────────┘
-              │ Stellar RPC                 │ Stellar testnet
-              ▼                             ▼
-┌─────────────────────────────────────────────────────────────┐
-│                   Stellar Network                           │
-│  Freighter signatures → Soroban invocation → public tx hash  │
-└─────────────────────────────────────────────────────────────┘
-              │
-              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                Production Grindy Integration                 │
-│  Profile wallet link → campaign rules → event adapters       │
-│  → scoring → leaderboard → reward allocation → settlement    │
-└─────────────────────────────────────────────────────────────┘
+Soroswap testnet swap
+        |
+        v
+Soroswap adapter decodes XDR
+        |
+        v
+NormalizedCampaignEvent
+        |
+        v
+Eligibility and contribution
+        |
+        v
+Final leaderboard and allocation manifest
+        |
+        v
+CampaignEscrow finalization
+        |
+        v
+RewardDistributor commitment and payout
 ```
 
-For the product architecture, C4 system context, campaign data flow, and Stellar settlement model, see [`docs/technical-architecture.md`](docs/technical-architecture.md).
+| Proof | Result |
+| --- | --- |
+| Source activity | [Public Soroswap transaction](https://stellar.expert/explorer/testnet/tx/48dc831a8865641b1af97d817454afa0a1e4643f7fbc7bd058988ef42d4b3318) |
+| Normalized contribution | 200 XLM eligible swap volume |
+| Reward pool | 100 XLM |
+| Final allocation | 70 XLM to one participant |
+| Unused pool | 30 XLM returned atomically to the protocol owner |
+| Settlement | [Public batch payout](https://stellar.expert/explorer/testnet/tx/b175e9ec332a9f02538411c2d6022a77aa27da7db4276451047511c418c9ca7e) |
+| Participant claim proof | [Participant-signed `claim()` transaction](https://stellar.expert/explorer/testnet/tx/2eafa9566d2863bd8124c6b2be6dd96a48a0f747473e4cb49e408d9cb0b399b2) |
+| Final status | Settled |
 
-## Project Structure
+The Campaign #001 activity wallet was paid through the authenticated batch path because this repository does not control that participant key. The participant path was also exercised independently on testnet: a separate wallet committed its allocation and signed `claim()` itself against an isolated RewardDistributor deployment.
+
+## Campaign Contracts
+
+### CampaignEscrow
+
+Protocol-funded reward custody and campaign lifecycle:
+
+```text
+Created -> Funded -> Active -> Finalized -> Settled
+                       |
+                       v
+                     Paused -> Active
+                       |
+                       v
+                    Refunded
+```
+
+- Contract: [`CDTZ7IWF...HJABCLP`](https://stellar.expert/explorer/testnet/contract/CDTZ7IWFMOLUIPBNWF2H4MMA4JBAYVWKVQC4IISSIZNJLUYYZHJABCLP)
+- Funding: [100 XLM transaction](https://stellar.expert/explorer/testnet/tx/57cc628ecd0c6bed3126b06b14befe47af683efac53728c466f1e7cc93623a96)
+- Finalization: [allocation commitment](https://stellar.expert/explorer/testnet/tx/8cfe41256d43cf9e6c33b876c24b574e29a9eaff0458e4a01ae6deee79ae2124)
+- Settlement: [70 XLM routed and 30 XLM returned](https://stellar.expert/explorer/testnet/tx/9eb29891c17575abc4ac1178175b1ccf8f2d13c5fbf7c81780601efa73b0bcea)
+- Pause/refund proof: [pause](https://stellar.expert/explorer/testnet/tx/3bcd30f7317cbc69c52d39ccb6b4635bbf268830d6b16aedd0396a5402d8bece), [refund](https://stellar.expert/explorer/testnet/tx/0a273288d45b153d29acca6b05ab5d35a4d1a9eff94ca325732512780087ba63)
+- Contract reference: [contracts/campaign-escrow/README.md](contracts/campaign-escrow/README.md)
+
+### RewardDistributor
+
+Final allocation commitment, participant claims, verified batches, and duplicate-payment prevention:
+
+- Contract: [`CB4BMKLN...ZAXT37M`](https://stellar.expert/explorer/testnet/contract/CB4BMKLNTZXUIIAAXULVNDZNYATKEVKHS7XJRABIS654B3LIVZAXT37M)
+- Allocation root: `27f185b31c6c785856541b5222efc76d4ea188a802b22b7a85a0c776709f11db`
+- Commitment: [public transaction](https://stellar.expert/explorer/testnet/tx/a827bfa7431f1b3fcb7d4c88ebcbec86cfcee636e5ad9c924f5e21e97b39cd83)
+- Payout: [public transaction](https://stellar.expert/explorer/testnet/tx/b175e9ec332a9f02538411c2d6022a77aa27da7db4276451047511c418c9ca7e)
+- Self-claim proof contract: [`CDARFIGM...GVBBUPE`](https://stellar.expert/explorer/testnet/contract/CDARFIGMVZSLG6SXBSDTFKEVKANSF7567PIRIFUVGKDYA2KTIGVBBUPE)
+- Participant-signed claim: [public transaction](https://stellar.expert/explorer/testnet/tx/2eafa9566d2863bd8124c6b2be6dd96a48a0f747473e4cb49e408d9cb0b399b2)
+- Contract reference: [contracts/reward-distributor/README.md](contracts/reward-distributor/README.md)
+
+The original [`CampaignRewardVault`](contracts/campaign-reward-vault/README.md) remains in the repository as the earlier narrow `deposit` / `withdraw` testnet primitive. Campaign #001 uses the production-shaped escrow and distributor contracts above.
+
+## Attribution Layer
+
+### NormalizedCampaignEvent
+
+[`packages/campaign-event-schema`](packages/campaign-event-schema) defines the versioned public boundary between protocol-specific activity and campaign scoring.
+
+```json
+{
+  "schemaVersion": "1.0",
+  "campaignId": "grindy-stellar-testnet-campaign-001",
+  "network": "testnet",
+  "wallet": "GDY2IB6RSKMLRFLAPPCLVRHPDAFYRL6V7SZDZP4QSHP3Y3XMGVDSYDN2",
+  "protocol": "soroswap",
+  "action": "swap",
+  "asset": "XLM",
+  "amount": "200",
+  "ledger": 4084752,
+  "transactionHash": "48dc831a8865641b1af97d817454afa0a1e4643f7fbc7bd058988ef42d4b3318",
+  "timestamp": "2026-08-11T10:39:53Z",
+  "eventId": "0017543876252295168-0000000004",
+  "idempotencyKey": "..."
+}
+```
+
+Amounts remain decimal strings, immutable ledger records receive deterministic event IDs, and campaign-specific idempotency keys prevent duplicate scoring across retries.
+
+### Adapter SDK and Soroswap
+
+[`packages/adapter-sdk`](packages/adapter-sdk) defines the interface from raw Stellar activity to a normalized contribution. [`adapters/soroswap`](adapters/soroswap) is the first working implementation:
+
+- decodes the public Soroswap Router event from Stellar XDR;
+- validates contract, topics, campaign period, assets, pool, and wallet;
+- preserves integer precision with decimal strings and `BigInt`;
+- emits one deterministic normalized event;
+- converts the eligible 200 XLM swap into a campaign scoring input.
+
+The fixture is a real public testnet transaction, not synthetic activity. Protocol-specific scoring policy remains outside the adapter.
+
+## Repository Structure
 
 ```text
 grindy-stellar-integration/
-├── packages/
-│   ├── stellar-wallet-link
-│   │   └── src/index.ts               # wallet connect, ownership message, signing helpers
-│   └── stellar-signature-verifier
-│       ├── src/index.ts               # backend-safe signature verification
-│       └── test/verifier.test.ts      # verifier unit tests
-├── examples/
-│   ├── grindy-stellar-wallet-demo     # Vite demo for connect + sign + verify
-│   └── reward-vault-next              # Next.js demo for Freighter + vault transaction
 ├── contracts/
-│   └── campaign-reward-vault
-│       ├── src/lib.rs                 # Soroban contract
-│       └── README.md                  # deployment and testnet evidence
+│   ├── campaign-escrow/
+│   ├── reward-distributor/
+│   └── campaign-reward-vault/
+├── packages/
+│   ├── stellar-wallet-link/
+│   ├── stellar-signature-verifier/
+│   ├── campaign-event-schema/
+│   └── adapter-sdk/
+├── adapters/
+│   └── soroswap/
+├── examples/
+│   ├── grindy-stellar-wallet-demo/
+│   └── reward-vault-next/
 └── docs/
-    ├── technical-architecture.md      # product architecture and Stellar-native target design
-    ├── ownership-message.md           # ownership proof format
-    ├── security.md                    # wallet and custody boundaries
-    └── setup.md                       # local setup notes
+    ├── technical-architecture.md
+    ├── campaign-rails-roadmap.md
+    ├── event-schema.md
+    ├── settlement-manifest.md
+    ├── security.md
+    └── setup.md
 ```
-
-## Smart Contract API
-
-| Function | Auth | Description |
-| --- | --- | --- |
-| `init(admin)` | `admin.require_auth()` | One-time initialization of the vault administrator and total balance. |
-| `deposit(token, from, amount)` | `from.require_auth()` | Transfers tokens from the wallet into the vault and updates wallet/total accounting. |
-| `withdraw(token, to, amount)` | `to.require_auth()` | Transfers previously deposited tokens from the vault back to the wallet. |
-| `balance(user)` | None | Reads the stored vault balance for a wallet. |
-| `total_deposited()` | None | Reads the total vault balance. |
-| `admin()` | None | Reads the configured admin address. |
-
-The current contract is a focused testnet primitive, not a full production escrow. The production settlement architecture adds campaign finalization, allocation proofs, pause/refund controls, duplicate payout prevention and mainnet security review.
-
-## Testnet Evidence
-
-| Item | Status |
-| --- | --- |
-| Contract | `CampaignRewardVault` |
-| Network | Stellar testnet |
-| Contract ID | `CAIBPSOZD572Z6F7M36W3PWGXP2BNGTAXGPKZFU5DZ3QAQIRQ3MXGFIS` |
-| Demo token contract | Native XLM SAC: `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC` |
-| Admin testnet address | `GCDWZOFPTZQX7P4GEFK2XRDJVKOFMFFUJK4SOS37IRSKYG5WVTUIRZIT` |
-| WASM hash | `8ef2c8f83fa0852593a9228e374b4113ae586b19f3da9a52eba52dcc29b5bc2d` |
-| Deploy transactions | [upload](https://stellar.expert/explorer/testnet/tx/b98d43723ea7978a3aac84f38463c6dc4ad929244fc9158088786357c0dd0c2a), [deploy](https://stellar.expert/explorer/testnet/tx/2a4e53c86cc612df553c7b1fc21b6b4d8a0860c822ba3736c12b752a9fe386a6) |
-| Init transaction | [43dd8010fb0558433da0e0d5e5ecf952e0d824cac5872d9347321fbd393c68dd](https://stellar.expert/explorer/testnet/tx/43dd8010fb0558433da0e0d5e5ecf952e0d824cac5872d9347321fbd393c68dd) |
-| Deposit transaction | [11294adf236564f4ef164b3b1e1778b6ce831809aa8e2a1259623ad29fdfd79c](https://stellar.expert/explorer/testnet/tx/11294adf236564f4ef164b3b1e1778b6ce831809aa8e2a1259623ad29fdfd79c) |
-| Withdraw transaction | [b096ff71470b13fc3a5c7407dfcc8d6221664766fdd57361ce2e40224529acd5](https://stellar.expert/explorer/testnet/tx/b096ff71470b13fc3a5c7407dfcc8d6221664766fdd57361ce2e40224529acd5) |
-| Transaction UI | `examples/reward-vault-next` |
 
 ## Quick Start
 
@@ -131,8 +157,8 @@ The current contract is a focused testnet primitive, not a full production escro
 - Node.js 20+
 - pnpm 10+
 - Rust with the `wasm32v1-none` target
-- Stellar CLI
-- A Stellar wallet extension such as Freighter
+- Stellar CLI for optimized contract builds
+- Freighter for interactive testnet flows
 
 ### Install and validate
 
@@ -141,85 +167,69 @@ pnpm install
 pnpm check-types
 pnpm test
 pnpm build
-```
-
-### Build and test the contract
-
-```bash
 pnpm contract:test
 pnpm contract:build
 ```
 
-### Run the wallet ownership demo
-
-```bash
-pnpm demo
-```
-
-Open `http://localhost:5173`, connect a Stellar wallet, sign the ownership message and verify the signature locally.
-
-### Run the reward vault transaction demo
+### Run the public lab
 
 ```bash
 pnpm vault:ui
 ```
 
-Open `http://localhost:3040`, connect Freighter on testnet, enter an amount and submit a `deposit` or `withdraw` transaction against the deployed vault.
+Open `http://localhost:3040` for wallet ownership and vault interaction. Campaign #001 is available at `http://localhost:3040/campaigns/testnet-001`.
 
-## Test Suite
+## Test Coverage
 
-| Area | Command | Current coverage |
-| --- | --- | --- |
-| TypeScript packages and demos | `pnpm check-types` | Wallet package, verifier package, Vite demo, Next.js demo. |
-| Signature verifier | `pnpm test` | Valid signature, invalid signature, wrong-message rejection. |
-| Production builds | `pnpm build` | Package builds, Vite production build, Next.js production build. |
-| Soroban contract | `pnpm contract:test` | Deposit and withdraw round trip with accounting checks. |
-| Soroban WASM | `pnpm contract:build` | Rebuilds the optimized testnet contract WASM. |
-
-## Technology Stack
-
-| Layer | Technology |
+| Area | Coverage |
 | --- | --- |
-| Wallet connection | Stellar Wallets Kit, Freighter API |
-| Wallet proof | Stellar Ed25519 signatures |
-| Frontend demos | React, Vite, Next.js |
-| Backend verifier package | TypeScript, `@stellar/stellar-sdk` |
-| Smart contract | Rust, Soroban SDK |
-| Network | Stellar testnet, Stellar RPC |
-| Package manager | pnpm workspace |
+| Wallet proof | Message construction, valid signature, invalid signature, wrong message |
+| Event schema | Runtime validation, deterministic event IDs, idempotency |
+| Adapter SDK | Eligibility guards and scoring-input boundary |
+| Soroswap adapter | XDR decode, topic validation, precision, filtering, deterministic normalization |
+| CampaignEscrow | Roles, funding, lifecycle, expiry, no participants, pool limit, settlement, refund |
+| RewardDistributor | Allocation commitment, proof validation, duplicate claims, batches, balance limits, refunds |
+| Public demos | TypeScript checks and production builds |
 
-## Production Extension Mapping
+GitHub Actions reruns TypeScript builds/tests and all three Soroban contract test/WASM builds on pushes and pull requests.
 
-| Production Grindy capability | Public Stellar module | Integration path |
-| --- | --- | --- |
-| User profile | `stellar-wallet-link` + `stellar-signature-verifier` | Add verified Stellar public key to the existing profile model. |
-| Campaign enrollment | Planned production integration | Require a verified Stellar wallet before joining Stellar-native campaigns. |
-| CEX read-only tracking | Future Stellar adapters | Replace exchange trade reads with Horizon / Stellar RPC / Soroban event ingestion. |
-| Campaign scoring | Future normalized event stream | Convert swaps, LP deposits, lending supply, and yield allocations into scoring inputs. |
-| Leaderboards | Production integration point | Reuse existing leaderboard engine with Stellar campaign scores. |
-| Reward operations | `CampaignRewardVault` pattern | Extend vault proof into campaign escrow, finalization, and distribution contracts. |
+## Security Boundary
 
-## Repository Boundary
+- Grindy never requests or stores private keys or seed phrases.
+- Wallet ownership signatures cannot move funds.
+- Participant trading funds and DeFi positions never enter Grindy contracts.
+- Only protocol-funded campaign rewards are escrowed.
+- Campaign and distribution roles are explicit and authenticated.
+- Allocation commitments are immutable after finalization.
+- Claims are idempotent and duplicate payouts are rejected.
+- Advanced settlement includes pause and protocol refund paths.
+- Testnet contracts are public readiness software and have not received an external security audit.
 
-This repository intentionally excludes:
+See [docs/security.md](docs/security.md) for the complete public security model.
 
-- campaign dashboard and management logic
-- CEX read-only API tracking
-- DEX beta campaign logic
-- scoring and reward engine internals
-- database production schema/functions
-- admin tooling
-- API keys and deployment configuration
+## Public and Commercial Boundary
 
-Only public testnet IDs and client-safe example variables are committed.
+This repository publishes reusable Stellar infrastructure:
+
+- wallet ownership and signature modules;
+- normalized campaign event schema;
+- adapter interface and public protocol adapters;
+- Soroban campaign settlement contracts;
+- fixtures, tests, deployment evidence, and technical documentation.
+
+The hosted Grindy product retains campaign operations, configurable scoring policy, partner analytics, anti-abuse review, administration, and private production infrastructure.
+
+No secrets, production API keys, private deployment credentials, or private application code belong in this repository.
 
 ## Documentation
 
-- [Technical Architecture](docs/technical-architecture.md) — C4-style diagrams, data flows, contract spec, database additions, API/server changes, and integration points.
-- [Ownership Message](docs/ownership-message.md) — Wallet ownership payload and replay-safety notes.
-- [Security](docs/security.md) — Custody boundaries, signature checks, and backend verification rules.
-- [Setup](docs/setup.md) — Local setup and command reference.
-- [Contract README](contracts/campaign-reward-vault/README.md) — Contract commands, deployment checklist, and testnet evidence.
+- [Technical Architecture](docs/technical-architecture.md)
+- [Campaign Rails Roadmap](docs/campaign-rails-roadmap.md)
+- [Campaign Event Schema](docs/event-schema.md)
+- [Settlement Manifest](docs/settlement-manifest.md)
+- [Soroswap Adapter](docs/adapters/soroswap.md)
+- [Security Model](docs/security.md)
+- [Local Setup](docs/setup.md)
 
 ## License
 

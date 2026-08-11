@@ -4,7 +4,7 @@
 
 Grindy is a live B2B campaign infrastructure product for crypto and DeFi protocols. Its current production engine supports campaign creation, participant enrollment, scoring, leaderboards, analytics, and reward operations. The existing MVP validates this model through read-only CEX integrations and completed campaign seasons.
 
-The SCF Build extends that proven campaign engine into a Stellar-native product. Stellar becomes the identity, activity-data, scoring, and reward-settlement layer for campaigns based on swaps, liquidity provision, lending supply, and yield allocation. The extension adds verified Stellar wallet linking, on-chain event indexing, protocol adapters, Stellar campaign rules, and native reward settlement.
+The Stellar-native expansion extends that proven campaign engine with Stellar identity, activity data, scoring inputs, and reward settlement for campaigns based on swaps, liquidity provision, lending supply, and yield allocation. It adds verified wallet linking, on-chain event indexing, protocol adapters, Stellar campaign rules, and native settlement.
 
 Grindy never takes custody of participant trading funds. Users interact directly with Stellar wallets and DeFi protocols. Protocol partners define campaigns and fund their reward pools.
 
@@ -49,7 +49,7 @@ The Stellar-native architecture preserves this campaign engine. It changes how p
 | Advanced reward settlement | Not available on-chain | Soroban campaign escrow and reward distribution | New Stellar-native settlement lane |
 | Protocol coverage | Centralized exchange integrations | Soroswap, Aquarius, Blend v2, and DeFindex adapters | New Stellar-native integrations |
 
-The existing campaign, scoring, leaderboard, analytics, and administration layers remain the product core. The SCF Build connects those capabilities to Stellar identity and on-chain data, then adds Stellar-native settlement.
+The existing campaign, scoring, leaderboard, analytics, and administration layers remain the product core. The Stellar-native layer connects those capabilities to wallet identity and on-chain data, then adds transparent settlement.
 
 ## 3. Architecture at a Glance
 
@@ -214,7 +214,6 @@ Soroban is used when a campaign requires an on-chain funded lifecycle or program
 
 | Contract | Purpose | Core responsibilities |
 | --- | --- | --- |
-| `CampaignRegistry` | Canonical campaign reference | Registers campaign metadata hash, status, settlement asset, and linked escrow. |
 | `CampaignEscrow` | Protocol-funded reward custody | Accepts reward funding, enforces lifecycle state, supports pause, finalization, and refund paths. |
 | `RewardDistributor` | Allocation settlement | Commits the final allocation manifest and supports batched payouts or participant claims with duplicate-claim prevention. |
 
@@ -236,40 +235,31 @@ Across both lanes, Grindy does not custody participant trading funds. Reward poo
 - **Audit trail:** wallet links, indexed events, score changes, campaign state changes, and settlement transactions are recorded.
 - **Advanced-mode safeguards:** Soroban settlement includes role separation, duplicate-claim prevention, pause controls, and a refund path.
 
-## 9. SCF Build Scope
+## 9. Delivery Boundary
 
-### MVP
+### Public Readiness Proof
 
-- Stellar wallet connection through Stellar Wallets Kit and Freighter;
-- signed wallet ownership proof and wallet-to-profile linking;
-- duplicate wallet-link prevention;
-- Stellar campaign enrollment;
-- Stellar event indexer MVP with durable cursors and idempotency;
-- first protocol campaign adapter;
-- Stellar event scoring and leaderboard updates.
+- Stellar Wallets Kit and Freighter connection;
+- signed wallet ownership proof and backend-safe verification;
+- versioned campaign event schema and adapter interface;
+- Soroswap adapter converting a real public testnet event into a normalized contribution;
+- CampaignEscrow and RewardDistributor contracts deployed on testnet;
+- Campaign #001 from public activity through leaderboard, allocation, settlement, and payout;
+- public contract IDs, transaction links, fixtures, tests, and campaign evidence page.
 
-### Testnet
+### Production Expansion
 
-- Soroswap swap-campaign flow;
-- Aquarius liquidity-campaign flow;
-- Blend v2 supply-campaign adapter;
-- DeFindex yield-allocation adapter;
-- Claimable Balance reward test flow;
-- CampaignEscrow and RewardDistributor testnet contracts;
-- end-to-end campaign simulation from wallet connection to reward settlement.
-
-### Mainnet
-
-- production Stellar indexing and monitoring;
-- mainnet wallet identity and campaign enrollment;
-- production protocol adapters;
-- mainnet Claimable Balance settlement;
-- mainnet Soroban advanced settlement;
-- reusable campaign templates for swaps, liquidity, lending supply, and yield allocation.
+- production wallet-to-profile persistence, nonce storage, and campaign eligibility;
+- durable Horizon and Stellar RPC indexing with cursors, retries, ordering, and monitoring;
+- production protocol adapters beginning with Soroswap and Aquarius;
+- configurable Stellar campaign rules and scoring modes;
+- Claimable Balance settlement for simple campaigns;
+- hardened and versioned Soroban settlement for advanced campaigns;
+- mainnet deployment procedures and reusable campaign templates.
 
 ## 10. Out of Scope for the Initial Mainnet Release
 
-- Protocol reward pools, participant rewards, and prize pools are funded by protocol partners, not the SCF Build.
+- Protocol reward pools, participant rewards, and prize pools are funded by protocol partners.
 - Marketing and user-acquisition spending are outside the technical integration scope.
 - Grindy does not custody participant trading funds or DeFi positions.
 - Near Intents may be evaluated as a later cross-chain onboarding extension after the Stellar-native campaign flow is stable.
@@ -284,29 +274,37 @@ The public [Grindy Stellar Integration repository](https://github.com/MuchuCAT/g
 - backend-safe Ed25519 signature verification;
 - browser wallet ownership demo;
 - Next.js Freighter transaction demo;
-- a Rust/Soroban `CampaignRewardVault` contract with deposit, withdraw, balance, and total-accounting functions;
-- Soroban contract tests;
-- a testnet deployment with verified deposit and withdrawal transactions;
+- a versioned normalized campaign event schema and adapter SDK;
+- a working Soroswap adapter backed by a real public testnet fixture;
+- Rust/Soroban `CampaignEscrow` and `RewardDistributor` contracts;
+- Campaign #001 with public funding, finalization, settlement, and payout transactions;
+- a separate pause/refund lifecycle proof;
+- Soroban and TypeScript test suites;
 - setup and local verification commands;
 - MIT license.
 
-**Live Stellar testnet demo:** [reward-vault-next.vercel.app](https://reward-vault-next.vercel.app)
+**Live Stellar testnet demo:** [stellar.grindy.fun](https://stellar.grindy.fun)
 
 | Testnet proof | Public reference |
 | --- | --- |
-| CampaignRewardVault contract | [`CAIBPSO...MXGFIS`](https://stellar.expert/explorer/testnet/contract/CAIBPSOZD572Z6F7M36W3PWGXP2BNGTAXGPKZFU5DZ3QAQIRQ3MXGFIS) |
-| Contract deployment | [Stellar Expert transaction](https://stellar.expert/explorer/testnet/tx/2a4e53c86cc612df553c7b1fc21b6b4d8a0860c822ba3736c12b752a9fe386a6) |
-| Contract initialization | [Stellar Expert transaction](https://stellar.expert/explorer/testnet/tx/43dd8010fb0558433da0e0d5e5ecf952e0d824cac5872d9347321fbd393c68dd) |
-| Test deposit | [Stellar Expert transaction](https://stellar.expert/explorer/testnet/tx/11294adf236564f4ef164b3b1e1778b6ce831809aa8e2a1259623ad29fdfd79c) |
-| Test withdrawal | [Stellar Expert transaction](https://stellar.expert/explorer/testnet/tx/b096ff71470b13fc3a5c7407dfcc8d6221664766fdd57361ce2e40224529acd5) |
+| Campaign #001 | [Public campaign evidence](https://stellar.grindy.fun/campaigns/testnet-001) |
+| Source Soroswap activity | [Stellar Expert transaction](https://stellar.expert/explorer/testnet/tx/48dc831a8865641b1af97d817454afa0a1e4643f7fbc7bd058988ef42d4b3318) |
+| CampaignEscrow | [`CDTZ7IWF...HJABCLP`](https://stellar.expert/explorer/testnet/contract/CDTZ7IWFMOLUIPBNWF2H4MMA4JBAYVWKVQC4IISSIZNJLUYYZHJABCLP) |
+| RewardDistributor | [`CB4BMKLN...ZAXT37M`](https://stellar.expert/explorer/testnet/contract/CB4BMKLNTZXUIIAAXULVNDZNYATKEVKHS7XJRABIS654B3LIVZAXT37M) |
+| Escrow funding | [Stellar Expert transaction](https://stellar.expert/explorer/testnet/tx/57cc628ecd0c6bed3126b06b14befe47af683efac53728c466f1e7cc93623a96) |
+| Campaign finalization | [Stellar Expert transaction](https://stellar.expert/explorer/testnet/tx/8cfe41256d43cf9e6c33b876c24b574e29a9eaff0458e4a01ae6deee79ae2124) |
+| Escrow settlement | [Stellar Expert transaction](https://stellar.expert/explorer/testnet/tx/9eb29891c17575abc4ac1178175b1ccf8f2d13c5fbf7c81780601efa73b0bcea) |
+| Allocation commitment | [Stellar Expert transaction](https://stellar.expert/explorer/testnet/tx/a827bfa7431f1b3fcb7d4c88ebcbec86cfcee636e5ad9c924f5e21e97b39cd83) |
+| Participant payout | [Stellar Expert transaction](https://stellar.expert/explorer/testnet/tx/b175e9ec332a9f02538411c2d6022a77aa27da7db4276451047511c418c9ca7e) |
+| Pause/refund proof | [Pause](https://stellar.expert/explorer/testnet/tx/3bcd30f7317cbc69c52d39ccb6b4635bbf268830d6b16aedd0396a5402d8bece), [refund](https://stellar.expert/explorer/testnet/tx/0a273288d45b153d29acca6b05ab5d35a4d1a9eff94ca325732512780087ba63) |
 
-The testnet vault is a deliberately narrow readiness proof. The production architecture separates simple Claimable Balance campaigns from advanced Soroban campaign escrow and distribution.
+The original deposit/withdraw vault remains as an earlier narrow primitive. Campaign #001 exercises the production-shaped attribution and settlement architecture.
 
 ## 12. References
 
 - [Grindy live application](https://app.grindy.fun)
 - [Grindy Stellar Integration repository](https://github.com/MuchuCAT/grindy-stellar-integration)
-- [Grindy Stellar testnet demo](https://reward-vault-next.vercel.app)
+- [Grindy Stellar testnet demo](https://stellar.grindy.fun)
 - [Stellar wallet integration](https://developers.stellar.org/docs/tools/developer-tools/wallets)
 - [Freighter developer documentation](https://docs.freighter.app/)
 - [Horizon API](https://developers.stellar.org/docs/data/apis/horizon)

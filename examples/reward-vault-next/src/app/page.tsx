@@ -246,6 +246,7 @@ export default function StellarDemo() {
 					<div className="hero-actions">
 						<button className="button button-primary" onClick={startDemo} type="button"><WalletIcon /> Try the live demo</button>
 						<a className="button button-secondary" href={architectureUrl} rel="noreferrer" target="_blank"><DocsIcon /> Read the architecture</a>
+						<a className="button button-secondary" href="/campaigns/testnet-001">Campaign #001 proof</a>
 					</div>
 					<div className="hero-meta"><span>No trading custody</span><span>Open-source integration</span><span>Public testnet evidence</span></div>
 				</div>
